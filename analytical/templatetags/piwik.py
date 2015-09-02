@@ -11,7 +11,7 @@ import re
 from django.template import Library, Node, TemplateSyntaxError
 
 from analytical.utils import (is_internal_ip, disable_html,
-                              get_required_setting, get_identity)
+                              get_required_setting, get_identity, is_service_enabled, NoopNode)
 
 
 # domain name (characters separated by a dot), optional URI path, no slash
@@ -66,7 +66,9 @@ def piwik(parser, token):
     bits = token.split_contents()
     if len(bits) > 1:
         raise TemplateSyntaxError("'%s' takes no arguments" % bits[0])
-    return PiwikNode()
+    if is_service_enabled('PIWIK'):
+        return PiwikNode()
+    return NoopNode('PIWIK')
 
 
 class PiwikNode(Node):

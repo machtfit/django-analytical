@@ -5,10 +5,29 @@ Utility function for django-analytical.
 from django.conf import settings
 from django.contrib.sites.models import Site
 from django.core.exceptions import ImproperlyConfigured
-
+from django.template import Node
 
 HTML_COMMENT = "<!-- %(service)s disabled on internal IP " \
                "address\n%(html)s\n-->"
+
+SERVICE_DISABLED_HTML = "<!-- %(service)s not enabled, enable by adding " \
+                        "ANALYTICS_%(service)s_ENABLED = True to your settings -->"
+
+class NoopNode(Node):
+    def __init__(self, service):
+        self.service = service
+
+    def render(self, context):
+        if not settings.TEMPLATE_DEBUG:
+            return ''
+        return SERVICE_DISABLED_HTML % {'service': self.service}
+
+def is_service_enabled(service):
+    try:
+        value = getattr(settings, 'ANALYTICAL_%s_ENABLED' % service.upper())
+    except AttributeError:
+        return False
+    return value
 
 
 def get_required_setting(setting, value_re, invalid_msg):
